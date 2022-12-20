@@ -1,0 +1,6 @@
+aliyun-python-sdk-core
+environs
+jinja2
+requests
+rsa
+zf-school-sdk==1.2.0
