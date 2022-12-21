@@ -1,4 +1,17 @@
 from requests import Session
+from school_sdk.client.api import BaseCrawler
+from school_sdk.client.api.login import ZFLogin
+
+original = {
+    'BaseCrawer.__init__': BaseCrawler.__init__,
+    'BaseCrawer.__requests': BaseCrawler._requests,
+    'ZFLogin._is_login': ZFLogin._is_login
+}
+
+patched = {
+    'proxy': False,
+    'session': False
+}
 
 
 def patch_proxy(proxy_url: str):
@@ -8,18 +21,13 @@ def patch_proxy(proxy_url: str):
     Patched methods:
      - `school_sdk.client.api.BaseCrawler._requests`
     """
-    # Object to patch
-    from school_sdk.client.api import BaseCrawler
-
-    # Original method
-    original_BaseCrawer__requests = BaseCrawler._requests
 
     # Patched method
     def BaseCrawer__requests(self, **kwargs):
         retries = 0
         while retries < 3:
             try:
-                return original_BaseCrawer__requests(self, proxies={
+                return original['BaseCrawer.__requests'](self, proxies={
                     'http': proxy_url,
                     'https': proxy_url
                 }, verify=False, **kwargs)
@@ -29,7 +37,10 @@ def patch_proxy(proxy_url: str):
                     raise e
 
     # Apply patch
-    BaseCrawler._requests = BaseCrawer__requests
+    if not patched['proxy']:
+        BaseCrawler._requests = BaseCrawer__requests
+
+    patched['proxy'] = True
 
 
 def patch_session(session: Session):
@@ -42,24 +53,19 @@ def patch_session(session: Session):
      - `school_sdk.client.api.login.ZFLogin._is_login`
     """
 
-    # Object to patch
-    from school_sdk.client.api import BaseCrawler
-    from school_sdk.client.api.login import ZFLogin
-
-    # Original method
-    original_BaseCrawer__init__ = BaseCrawler.__init__
-    original_BaseCrawer__requests = BaseCrawler._requests
-
     # Patched method
     def BaseCrawer__init__(self, user_client):
-        original_BaseCrawer__init__(self, user_client)
+        original['BaseCrawer.__init__'](self, user_client)
         self._http = session
     def BaseCrawer__requests(self, **kwargs):
-        return original_BaseCrawer__requests(self, verify=False, **kwargs)
+        return original['BaseCrawer.__requests'](self, verify=False, **kwargs)
     def ZFLogin__is_login(self, _):
         return True  # Always treated as logged in
 
     # Apply patch
-    BaseCrawler.__init__ = BaseCrawer__init__
-    BaseCrawler._requests = BaseCrawer__requests
-    ZFLogin._is_login = ZFLogin__is_login
+    if not patched['session']:
+        BaseCrawler.__init__ = BaseCrawer__init__
+        BaseCrawler._requests = BaseCrawer__requests
+        ZFLogin._is_login = ZFLogin__is_login
+
+    patched['session'] = True
