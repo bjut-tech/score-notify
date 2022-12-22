@@ -1,21 +1,31 @@
-from typing import Optional, List
+import webbrowser
+from tempfile import NamedTemporaryFile
 
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.request import CommonRequest
 from jinja2 import PackageLoader, select_autoescape, Environment
 
-from .config import ALIYUN_ACCESS_ID, ALIYUN_ACCESS_SECRET, NOTIFY_EMAIL
+from .config import ALIYUN_ACCESS_ID, ALIYUN_ACCESS_SECRET, NOTIFY_EMAIL, NOTIFY_DRY_RUN
 
 
-def render_template(grades_new: Optional[List[dict]], grades_all: List[dict]) -> str:
+def render_template(data: dict) -> str:
     loader = PackageLoader('score_notify')
     auto_escape = select_autoescape()
     env = Environment(loader=loader, autoescape=auto_escape)
     template = env.get_template("email.html")
-    return template.render(grades_new=grades_new, grades_all=grades_all)
+    return template.render(**data)
 
 
-def notify_email(grades_new: Optional[List[dict]], grades_all: List[dict]):
+def notify_email(data: dict):
+    if NOTIFY_DRY_RUN:
+        with NamedTemporaryFile(mode='w',
+                                encoding='utf-8',
+                                suffix='.htm',
+                                delete=False) as f:
+            f.write(render_template(data))
+            webbrowser.open(f.name)
+        return
+
     print('[*] Sending e-mail notification...')
     client = AcsClient(ALIYUN_ACCESS_ID, ALIYUN_ACCESS_SECRET)
     request = CommonRequest()
@@ -31,6 +41,6 @@ def notify_email(grades_new: Optional[List[dict]], grades_all: List[dict]):
     request.add_query_param('Subject', '[bjut.tech] Score Notification')
     request.add_query_param('ToAddress', NOTIFY_EMAIL)
     request.add_query_param('FromAlias', 'bjut.tech')
-    request.add_query_param('HtmlBody', render_template(grades_new, grades_all))
+    request.add_query_param('HtmlBody', render_template(data))
     request.add_query_param('TagName', 'Notification')
     client.do_action_with_exception(request)
