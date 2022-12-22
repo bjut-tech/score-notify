@@ -1,14 +1,35 @@
-from typing import List, Optional
+import pickle
+from typing import List
 
+import oss2
 from school_sdk import UserClient
 from school_sdk.client import Score
 
-from .config import NOTIFY_DRY_RUN
+from .config import ALIYUN_ACCESS_ID, ALIYUN_ACCESS_SECRET, IS_FC, NOTIFY_DRY_RUN
 from .notify_email import notify_email
 from .utils import get_current_term
 
+endpoint = 'https://oss-cn-beijing-internal.aliyuncs.com' if IS_FC \
+    else 'https://oss-cn-beijing.aliyuncs.com'
+bucket = oss2.Bucket(
+    oss2.Auth(ALIYUN_ACCESS_ID, ALIYUN_ACCESS_SECRET),
+    endpoint,
+    'bjut-tech'
+)
 
-def fetch_grades(client: UserClient, last: Optional[List[dict]] = None, notify='email') -> List[dict]:
+
+def _load_last():
+    if bucket.object_exists('score-notify/last.bin'):
+        return pickle.loads(bucket.get_object('score-notify/last.bin').read())
+    else:
+        return None
+
+
+def _save_last(grades: List[dict]):
+    bucket.put_object('score-notify/last.bin', pickle.dumps(grades))
+
+
+def fetch_grades(client: UserClient, notify='email') -> List[dict]:
     score_client = Score(client)
     score_client.load_score(**get_current_term())
 
@@ -21,6 +42,7 @@ def fetch_grades(client: UserClient, last: Optional[List[dict]] = None, notify='
         'excluded': i.get('kcxzmc') == '自主课堂' or i.get('kcgsmc') == '第二课堂'
     } for i in score_client.raw_score.get('items')]
 
+    last = _load_last()
     if last:
         last_names = [i['name'] for i in last]
         grades_new = [i for i in grades_all if i['name'] not in last_names]
@@ -42,6 +64,9 @@ def fetch_grades(client: UserClient, last: Optional[List[dict]] = None, notify='
 
     if grades_new or not last or NOTIFY_DRY_RUN:
         if notify == 'email':
-            notify_email(grades_new, grades_all)
+            notify_email(data)
+
+    if grades_all and grades_new:
+        _save_last(grades_all)
 
     return grades_all
