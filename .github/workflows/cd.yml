@@ -1,0 +1,49 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/cd.yml
+      - score_notify
+      - handler.py
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: jerray/setup-aliyun-cli-action@v1.0.1
+        with:
+          aliyun-cli-version: '3.0.141'
+          mode: AK
+          access-key-id: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+          region: cn-beijing
+      - uses: manyuanrong/setup-ossutil@v3.0
+        with:
+          endpoint: "oss-cn-beijing.aliyuncs.com"
+          access-key-id: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+      - name: Upload code
+        # Steps:
+        # - Zip the code
+        # - Upload code.zip to OSS
+        # - Update the function using CLI
+        # References:
+        # - https://help.aliyun.com/document_detail/179388.html
+        # - https://next.api.aliyun.com/document/FC-Open/2021-04-06/UpdateFunction
+        # - https://help.aliyun.com/document_detail/394217.html
+        run: |
+          zip -r code.zip score_notify handler.py
+          ossutil cp -f code.zip oss://bjut-tech/score-notify/code.zip
+          aliyun fc-open PUT /2021-04-06/services/bjut-tech/functions/score-notify \
+            --header "Content-Type=application/json;" \
+            --body "{\"code\":{\"ossBucketName\":\"bjut-tech\",\"ossObjectName\":\"score-notify/code.zip\"}}"
+          ossutil rm -f oss://bjut-tech/score-notify/code.zip
+          rm code.zip
