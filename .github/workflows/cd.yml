@@ -1,4 +1,4 @@
-name: CD
+name: Deploy
 
 on:
   push:
@@ -6,11 +6,11 @@ on:
       - main
     paths:
       - .github/workflows/cd.yml
-      - score_notify
+      - score_notify/**
       - handler.py
 
 concurrency:
-  group: ${{ github.ref }}
+  group: cd-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
