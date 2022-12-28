@@ -33,14 +33,31 @@ def fetch_grades(client: UserClient, notify='email') -> List[dict]:
     score_client = Score(client)
     score_client.load_score(**get_current_term())
 
-    grades_all = [{
-        'name': i.get('kcmc'),
-        'category': i.get('kcxzmc', '') + (' / ' if i.get('kcgsmc') else '') + i.get('kcgsmc', ''),
-        'score': float(i.get('cj', 0)),
-        'credit': float(i.get('xf', 0)),
-        'gp': float(i.get('jd', 0)),
-        'excluded': i.get('kcxzmc') == '自主课堂' or i.get('kcgsmc') == '第二课堂'
-    } for i in score_client.raw_score.get('items')]
+    grades_all = []
+    for item in score_client.raw_score.get('items', []):
+        item_data = {
+            'name': item.get('kcmc', ''),
+            'category': (item.get('kcxzmc', ''), item.get('kcgsmc', '')),
+            'score': item.get('cj', 0),
+            'credit': float(item.get('xf', 0)),
+            'gp': float(item.get('jd', 0)),
+            'excluded': False
+        }
+
+        try:
+            item_data['score'] = float(item_data['score'])
+        except ValueError:
+            item_data['excluded'] = True
+
+        if item_data['category'][0] == '自主课程' or item_data['category'][1] == '第二课堂':
+            item_data['excluded'] = True
+
+        if item_data['category'][1]:
+            item_data['category'] = ' / '.join(item_data['category'])
+        else:
+            item_data['category'] = item_data['category'][0]
+
+        grades_all.append(item_data)
 
     last = _load_last()
     if last:
