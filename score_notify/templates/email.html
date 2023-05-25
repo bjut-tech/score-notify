@@ -35,10 +35,14 @@
                       {% for grade in grades_new %}
                       <tr>
                         <td>{{ grade.name }}</td>
+                        {% if grade.score < 60 %}
+                        <td style="color: #ef4444">{{ grade.score }}</td>
+                        {% else %}
                         <td>{{ grade.score }}</td>
+                        {% endif %}
                         <td>{{ grade.credit }}</td>
                         {% if grade.excluded %}
-                        <td style="color: darkgray; font-size: 80%">不计入</td>
+                        <td style="color: #9ca3af; font-size: 80%">不计入</td>
                         {% else %}
                         <td>{{ grade.gp }}</td>
                         {% endif %}
@@ -58,18 +62,28 @@
                         <th>学分</th>
                         <th>绩点</th>
                       </tr>
+                      {% if grades_all %}
                       {% for grade in grades_all %}
                       <tr>
                         <td>{{ grade.name }}</td>
+                        {% if grade.score < 60 %}
+                        <td style="color: #ef4444">{{ grade.score }}</td>
+                        {% else %}
                         <td>{{ grade.score }}</td>
+                        {% endif %}
                         <td>{{ grade.credit }}</td>
                         {% if grade.excluded %}
-                        <td style="color: darkgray; font-size: 80%">不计入</td>
+                        <td style="color: #9ca3af; font-size: 80%">不计入</td>
                         {% else %}
                         <td>{{ grade.gp }}</td>
                         {% endif %}
                       </tr>
                       {% endfor %}
+                      {% else %}
+                      <tr>
+                        <td colspan="4" style="color: #9ca3af">暂无已发布的成绩</td>
+                      </tr>
+                      {% endif %}
                     </table>
                   </div>
                   <div class="table">
@@ -79,13 +93,25 @@
                       </tr>
                       <tr>
                         <th>加权平均分</th>
-                        <th>总学分</th>
                         <th>GPA</th>
+                        <th>专业排名</th>
                       </tr>
                       <tr>
+                        {% if score_average %}
                         <td>{{ score_average }}</td>
-                        <td>{{ sum_credit }}</td>
+                        {% else %}
+                        <td>N/A</td>
+                        {% endif %}
+                        {% if gpa %}
                         <td>{{ gpa }}</td>
+                        {% else %}
+                        <td>N/A</td>
+                        {% endif %}
+                        {% if rank %}
+                        <td>{{ rank }}</td>
+                        {% else %}
+                        <td style="color: #ef4444; font-size: 80%">无法获取</td>
+                        {% endif %}
                       </tr>
                     </table>
                   </div>

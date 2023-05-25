@@ -1,4 +1,5 @@
 aliyun-python-sdk-core
+beautifulsoup4
 environs
 jinja2
 oss2
