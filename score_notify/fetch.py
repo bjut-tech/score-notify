@@ -9,7 +9,7 @@ from school_sdk.client import Score
 from .config import ALIYUN_ACCESS_ID, ALIYUN_ACCESS_SECRET, IS_FC, NOTIFY_DRY_RUN
 from .notify_email import notify_email
 from .rank import Rank
-from .utils import get_current_term
+from .utils import get_current_term, get_term_before
 
 endpoint = 'https://oss-cn-beijing-internal.aliyuncs.com' if IS_FC \
     else 'https://oss-cn-beijing.aliyuncs.com'
@@ -31,9 +31,9 @@ def _save_last(grades: List[dict]):
     bucket.put_object('score-notify/last.bin', pickle.dumps(grades))
 
 
-def fetch_grades(client: UserClient, notify='email') -> List[dict]:
+def _fetch_grades(client: UserClient, term: dict) -> List[dict]:
     score_client = Score(client)
-    score_client.load_score(**get_current_term())
+    score_client.load_score(**term)
 
     grades_all = []
     for item in score_client.raw_score.get('items', []):
@@ -61,6 +61,13 @@ def fetch_grades(client: UserClient, notify='email') -> List[dict]:
 
         grades_all.append(item_data)
 
+    return grades_all
+
+
+def fetch_grades(client: UserClient, notify='email') -> List[dict]:
+    term = get_current_term()
+    grades_all = _fetch_grades(client, term)
+
     last = _load_last()
     if last:
         last_names = [i['name'] for i in last]
@@ -68,8 +75,18 @@ def fetch_grades(client: UserClient, notify='email') -> List[dict]:
     else:
         grades_new = None
 
-    grades_included = [i for i in grades_all if not i['excluded']]
+    # fetch historical grades for gpa and average score
+    grades_included = []
+    this_grades_all = grades_all
+    while True:
+        grades_included += [i for i in this_grades_all if not i['excluded']]
+        term = get_term_before(term)
+        this_grades_all = _fetch_grades(client, term)
 
+        if not this_grades_all:
+            break
+
+    # fetch current rank
     try:
         rank_client = Rank(client)
         rank = rank_client.get_rank()
@@ -88,6 +105,9 @@ def fetch_grades(client: UserClient, notify='email') -> List[dict]:
         ]) / sum([i['credit'] for i in grades_included]), 2) if grades_included else None,
         'rank': rank
     }
+
+    if grades_all == grades_new:
+        data['grades_new'] = None
 
     if grades_new or not last or NOTIFY_DRY_RUN:
         if notify == 'email':
