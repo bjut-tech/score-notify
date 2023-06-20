@@ -1,5 +1,4 @@
 import pickle
-import traceback
 from typing import List
 
 import oss2
@@ -8,7 +7,6 @@ from school_sdk.client import Score
 
 from .config import ALIYUN_ACCESS_ID, ALIYUN_ACCESS_SECRET, IS_FC, NOTIFY_DRY_RUN
 from .notify_email import notify_email
-from .rank import Rank
 from .utils import get_current_term, get_term_before
 
 endpoint = 'https://oss-cn-beijing-internal.aliyuncs.com' if IS_FC \
@@ -86,14 +84,6 @@ def fetch_grades(client: UserClient, notify='email') -> List[dict]:
         if not this_grades_all:
             break
 
-    # fetch current rank
-    try:
-        rank_client = Rank(client)
-        rank = rank_client.get_rank()
-    except Exception:
-        traceback.print_exc()
-        rank = None
-
     data = {
         'grades_new': grades_new,
         'grades_all': grades_all,
@@ -102,8 +92,7 @@ def fetch_grades(client: UserClient, notify='email') -> List[dict]:
         ]) / sum([i['credit'] for i in grades_included]), 2) if grades_included else None,
         'gpa': round(sum([
             i['gp'] * i['credit'] for i in grades_included
-        ]) / sum([i['credit'] for i in grades_included]), 2) if grades_included else None,
-        'rank': rank
+        ]) / sum([i['credit'] for i in grades_included]), 2) if grades_included else None
     }
 
     if grades_all == grades_new:
