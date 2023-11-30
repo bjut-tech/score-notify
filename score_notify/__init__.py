@@ -1,2 +1,3 @@
-from .auth import login
-from .fetch import fetch_grades
+from .grades import GradesFetcher
+from .notify_email import EmailNotifier
+from ._main import main

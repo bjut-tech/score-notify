@@ -1,8 +1,6 @@
 aliyun-python-sdk-core
 beautifulsoup4
-environs
+bjut-tech @ git+https://github.com/bjut-tech/py
+httpx
 jinja2
 oss2
-requests
-rsa
-zf-school-sdk==1.2.0

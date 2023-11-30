@@ -1,3 +1,8 @@
-from . import login, fetch_grades
+from bjut_tech import ConfigRegistry
+from ._main import main
 
-fetch_grades(login())
+config = ConfigRegistry()
+
+data = main(config)
+
+print(data)

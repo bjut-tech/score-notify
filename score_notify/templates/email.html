@@ -41,10 +41,10 @@
                         <td>{{ grade.score }}</td>
                         {% endif %}
                         <td>{{ grade.credit }}</td>
-                        {% if grade.excluded %}
-                        <td style="color: #9ca3af; font-size: 80%">不计入</td>
-                        {% else %}
+                        {% if grade.included %}
                         <td>{{ grade.gp }}</td>
+                        {% else %}
+                        <td style="color: #9ca3af; font-size: 80%">不计入</td>
                         {% endif %}
                       </tr>
                       {% endfor %}
@@ -62,8 +62,8 @@
                         <th>学分</th>
                         <th>绩点</th>
                       </tr>
-                      {% if grades_all %}
-                      {% for grade in grades_all %}
+                      {% if grades_current %}
+                      {% for grade in grades_current %}
                       <tr>
                         <td>{{ grade.name }}</td>
                         {% if grade.score < 60 %}
@@ -72,10 +72,10 @@
                         <td>{{ grade.score }}</td>
                         {% endif %}
                         <td>{{ grade.credit }}</td>
-                        {% if grade.excluded %}
-                        <td style="color: #9ca3af; font-size: 80%">不计入</td>
-                        {% else %}
+                        {% if grade.included %}
                         <td>{{ grade.gp }}</td>
+                        {% else %}
+                        <td style="color: #9ca3af; font-size: 80%">不计入</td>
                         {% endif %}
                       </tr>
                       {% endfor %}
