@@ -1,16 +1,16 @@
-name: Deploy
+name: Deploy Alibaba Cloud FC Function
 
 on:
   push:
     branches:
       - main
     paths:
-      - .github/workflows/cd.yml
+      - .github/workflows/cd-fc.yml
       - score_notify/**
       - handler.py
 
 concurrency:
-  group: cd-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -18,18 +18,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: jerray/setup-aliyun-cli-action@v1.0.1
+      - uses: jerray/setup-aliyun-cli-action@v1.0.2
         with:
-          aliyun-cli-version: '3.0.141'
+          aliyun-cli-version: '3.0.189'
           mode: AK
-          access-key-id: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
-          access-key-secret: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+          access-key-id: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
           region: cn-beijing
       - uses: manyuanrong/setup-ossutil@v3.0
         with:
           endpoint: "oss-cn-beijing.aliyuncs.com"
-          access-key-id: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
-          access-key-secret: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+          access-key-id: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_ID }}
+          access-key-secret: ${{ secrets.ALIBABA_CLOUD_ACCESS_KEY_SECRET }}
       - name: Upload code
         # Steps:
         # - Zip the code
@@ -41,9 +41,9 @@ jobs:
         # - https://help.aliyun.com/document_detail/394217.html
         run: |
           zip -r code.zip score_notify handler.py
-          ossutil cp -f code.zip oss://bjut-tech/score-notify/code.zip
+          ossutil cp -f code.zip oss://bjut-tech/build/fc/code_score-notify.zip
           aliyun fc-open PUT /2021-04-06/services/bjut-tech/functions/score-notify \
             --header "Content-Type=application/json;" \
-            --body "{\"code\":{\"ossBucketName\":\"bjut-tech\",\"ossObjectName\":\"score-notify/code.zip\"}}"
-          ossutil rm -f oss://bjut-tech/score-notify/code.zip
-          rm code.zip
+            --body "{\"code\":{\"ossBucketName\":\"bjut-tech\",\"ossObjectName\":\"build/fc/code_score-notify.zip\"}}"
+          ossutil rm -f oss://bjut-tech/build/fc/code_score-notify.zip
+          rm -f code.zip
