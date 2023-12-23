@@ -15,9 +15,15 @@ if TYPE_CHECKING:
 
 class GradesFetcher:
 
-    def __init__(self, tunnel: AbstractTunnel, persistence: AbstractPersistenceProvider):
+    def __init__(
+        self,
+        tunnel: AbstractTunnel,
+        persistence: AbstractPersistenceProvider,
+        base_url: str
+    ):
         self.tunnel = tunnel
         self.persistence = persistence
+        self.base_url = base_url
 
         self.uid = self.get_uid()
         self.persistence_key = f'score-notify/{self.uid}/last.bin'
@@ -68,7 +74,7 @@ class GradesFetcher:
 
     def get_uid(self) -> str:
         session = self.tunnel.get_session()
-        url = self.tunnel.transform_url('https://jwglxt.bjut.edu.cn/xtgl/index_initMenu.html')
+        url = self.tunnel.transform_url(f'{self.base_url}/xtgl/index_initMenu.html')
 
         response = session.get(url, params={
             '_t': floor(time.time() * 1000)
@@ -84,7 +90,7 @@ class GradesFetcher:
         term_code = ({1: '3', 2: '12'}[int(term[1])]) if term is not None else ''
 
         session = self.tunnel.get_session()
-        url = self.tunnel.transform_url('https://jwglxt.bjut.edu.cn/cjcx/cjcx_cxXsgrcj.html')
+        url = self.tunnel.transform_url(f'{self.base_url}/cjcx/cjcx_cxXsgrcj.html')
 
         response = session.post(url, params={
             'doType': 'query',

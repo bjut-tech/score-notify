@@ -20,13 +20,14 @@ def main(config: ConfigRegistry):
     }, verify=False)
     tunnel = TunnelSelector(session, config).get_best()
 
+    base_url = config.get('JW_BASE_URL', 'https://jwglxt.bjut.edu.cn')
     username = config['CAS_USERNAME']
     password = config.get('JW_PASSWORD', config['CAS_PASSWORD'])
-    auth = JwglxtAuthentication(tunnel, username, password)
+    auth = JwglxtAuthentication(tunnel, base_url, username, password)
     auth.authenticate()
 
     persistence = get_persistence(config)
-    fetcher = GradesFetcher(tunnel, persistence)
+    fetcher = GradesFetcher(tunnel, persistence, base_url)
     data = fetcher()
 
     if data['grades_new']:
