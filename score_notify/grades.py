@@ -117,7 +117,7 @@ class GradesFetcher:
             'score': int(i.get('bfzcj', 0)),
             'credit': float(i.get('xf', 0)),
             'gp': float(i.get('jd', 0)),
-            'included': i.get('kcxzmc') != '自主课程' and i.get('kcgsmc') != '第二课堂'
+            'included': i.get('kcbj') == '主修' and i.get('kcxzmc') != '自主课程' and i.get('kcgsmc') != '第二课堂'
         } for i in data]
 
     def get_grades_all(self) -> list:
