@@ -92,12 +92,18 @@
                         <th colspan="3">统计数据</th>
                       </tr>
                       <tr>
-                        <th>加权平均分</th>
+                        <th>加权</th>
+                        <th>正考加权</th>
                         <th>GPA</th>
                       </tr>
                       <tr>
                         {% if score_average %}
                         <td>{{ score_average }}</td>
+                        {% else %}
+                        <td>N/A</td>
+                        {% endif %}
+                        {% if score_average_1 %}
+                        <td>{{ score_average_1 }}</td>
                         {% else %}
                         <td>N/A</td>
                         {% endif %}

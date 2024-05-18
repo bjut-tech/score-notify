@@ -56,12 +56,16 @@ class GradesFetcher:
             score_average = round(sum([
                 i['score'] * i['credit'] for i in grades_included
             ]) / sum([i['credit'] for i in grades_included]), 2)
+            score_average_1 = round(sum([
+                i['score_1'] * i['credit'] for i in grades_included
+            ]) / sum([i['credit'] for i in grades_included]), 2)
             gpa = round(sum([
                 i['gp'] * i['credit'] for i in grades_included
             ]) / sum([i['credit'] for i in grades_included]), 2)
         else:
             grades_included = None
             score_average = None
+            score_average_1 = None
             gpa = None
 
         return {
@@ -69,6 +73,7 @@ class GradesFetcher:
             'grades_current': grades_current,
             # 'grades_included': grades_included,
             'score_average': score_average,
+            'score_average_1': score_average_1,
             'gpa': gpa
         }
 
@@ -94,8 +99,7 @@ class GradesFetcher:
 
         response = session.post(url, params={
             'doType': 'query',
-            'gnmkdm': 'N305005',
-            'su': self.uid
+            'gnmkdm': 'N305005'
         }, data={
             'xnm': year_code,
             'xqm': term_code,
@@ -115,9 +119,10 @@ class GradesFetcher:
             'name': i.get('kcmc', ''),
             'category': (i.get('kcxzmc', ''), i.get('kcgsmc', '')),
             'score': int(i.get('bfzcj', 0)),
+            'is_score_1': i.get('ksxz') == '正常考试',
             'credit': float(i.get('xf', 0)),
             'gp': float(i.get('jd', 0)),
-            'included': i.get('kcbj') == '主修' and i.get('kcxzmc') != '自主课程' and i.get('kcgsmc') != '第二课堂'
+            'included': self._is_included(i)
         } for i in data]
 
     def get_grades_all(self) -> list:
@@ -126,15 +131,35 @@ class GradesFetcher:
     @staticmethod
     def _process_duplicates(grades: list) -> list:
         # if there are grades with same id, only keep the one with higher score
+        # score_1 is always the score of the first exam
+
         grade_dict = {}
         for grade in grades:
             if grade['id'] not in grade_dict:
                 grade_dict[grade['id']] = grade
+                grade_dict[grade['id']]['score_1'] = grade['score']
             else:
                 try:
                     if grade['score'] > grade_dict[grade['id']]['score']:
+                        if not grade['is_score_1']:
+                            grade['score_1'] = grade_dict[grade['id']]['score_1']
                         grade_dict[grade['id']] = grade
+                    elif grade['is_score_1']:
+                        grade_dict[grade['id']]['score_1'] = grade['score']
                 except KeyError or ValueError:
                     pass
 
+        for grade in grade_dict.values():
+            if 'is_score_1' in grade:
+                del grade['is_score_1']
+
         return list(grade_dict.values())
+
+    @staticmethod
+    def _is_included(grade: dict) -> bool:
+        if grade.get('kcbj') != '主修':
+            return False
+        for i in ['自主课程', '第二课堂', '创新创业']:
+            if i in grade.get('kcxzmc', '') or i in grade.get('kcgsmc', ''):
+                return False
+        return True
