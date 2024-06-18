@@ -119,7 +119,7 @@ class GradesFetcher:
             'name': i.get('kcmc', ''),
             'category': (i.get('kcxzmc', ''), i.get('kcgsmc', '')),
             'score': int(i.get('bfzcj', 0)),
-            'is_score_1': i.get('ksxz') == '正常考试',
+            'is_score_1': i.get('ksxz') == '正常考试',  # TODO: 正考的缓考也应该算做正考，不知道是否正确处理
             'credit': float(i.get('xf', 0)),
             'gp': float(i.get('jd', 0)),
             'included': self._is_included(i)
@@ -130,21 +130,28 @@ class GradesFetcher:
 
     @staticmethod
     def _process_duplicates(grades: list) -> list:
-        # if there are grades with same id, only keep the one with higher score
-        # score_1 is always the score of the first exam
+        # 处理重复项：
+        # - 若有一门课程多次考试，只保留最高分
+        # - `score_1` 永远存储正考成绩
 
         grade_dict = {}
         for grade in grades:
             if grade['id'] not in grade_dict:
+                # 没见过这门课，保留成绩
                 grade_dict[grade['id']] = grade
                 grade_dict[grade['id']]['score_1'] = grade['score']
             else:
+                # 已经保存过这门课的一个成绩，处理重复项
                 try:
                     if grade['score'] > grade_dict[grade['id']]['score']:
+                        # 如果本次考试成绩大于先前保存的成绩
+                        # 应该覆盖先前的成绩；但如果这次不是正考成绩，保留先前的正考成绩
                         if not grade['is_score_1']:
                             grade['score_1'] = grade_dict[grade['id']]['score_1']
                         grade_dict[grade['id']] = grade
                     elif grade['is_score_1']:
+                        # 本次考试不是最高的一次，但是是正考
+                        # 保存本次成绩为正考成绩
                         grade_dict[grade['id']]['score_1'] = grade['score']
                 except KeyError or ValueError:
                     pass
@@ -157,8 +164,11 @@ class GradesFetcher:
 
     @staticmethod
     def _is_included(grade: dict) -> bool:
+        # 检查课程是否纳入加权计算
+        # 辅修、微专业等不纳入（只有主修纳入）
         if grade.get('kcbj') != '主修':
             return False
+        # 自主课程、第二课堂、创新创业课程不纳入
         for i in ['自主课程', '第二课堂', '创新创业']:
             if i in grade.get('kcxzmc', '') or i in grade.get('kcgsmc', ''):
                 return False
