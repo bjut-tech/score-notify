@@ -54,7 +54,7 @@ class EmailNotifier:
         request.add_query_param('AccountName', 'notify@bjut.tech')
         request.add_query_param('AddressType', '1')
         request.add_query_param('ReplyToAddress', 'false')
-        request.add_query_param('Subject', '[bjut.tech] Score Notification')
+        request.add_query_param('Subject', '课程成绩发布提醒')
         request.add_query_param('ToAddress', self.receiver)
         request.add_query_param('FromAlias', 'bjut.tech')
         request.add_query_param('HtmlBody', self.render())
