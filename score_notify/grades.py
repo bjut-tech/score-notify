@@ -4,9 +4,8 @@ import time
 from math import floor
 from typing import TYPE_CHECKING, Tuple, Optional
 
-from bs4 import BeautifulSoup
-
 from bjut_tech.utils import get_current_term
+from .misc import JwMisc
 
 if TYPE_CHECKING:
     from bjut_tech.persistence import AbstractPersistenceProvider
@@ -24,8 +23,9 @@ class GradesFetcher:
         self.tunnel = tunnel
         self.persistence = persistence
         self.base_url = base_url
+        self.misc = JwMisc(tunnel, base_url)
 
-        self.uid = self.get_uid()
+        self.uid = self.misc.user['id']
         self.persistence_key = f'score-notify/{self.uid}/last.bin'
 
     def __call__(self):
@@ -76,19 +76,6 @@ class GradesFetcher:
             'score_average_1': score_average_1,
             'gpa': gpa
         }
-
-    def get_uid(self) -> str:
-        session = self.tunnel.get_session()
-        url = self.tunnel.transform_url(f'{self.base_url}/xtgl/index_initMenu.html')
-
-        response = session.get(url, params={
-            '_t': floor(time.time() * 1000)
-        }, follow_redirects=False)
-        if response.status_code != 200:
-            raise RuntimeError('Invalid session')
-
-        soup = BeautifulSoup(response.text, 'html.parser')
-        return soup.find('input', {'id': 'sessionUserKey'}).get('value')
 
     def get_grades(self, term: Optional[Tuple[int, int]]) -> list:
         year_code = term[0] if term is not None else ''
