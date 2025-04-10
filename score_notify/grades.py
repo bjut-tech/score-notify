@@ -156,7 +156,7 @@ class GradesFetcher:
         if grade.get('kcbj') != '主修':
             return False
         # 自主课程、第二课堂、创新创业课程不纳入
-        for i in ['自主课程', '第二课堂', '创新创业']:
+        for i in ['自主课程', '第二课堂', '创新创业', '创新实践']:
             if i in grade.get('kcxzmc', '') or i in grade.get('kcgsmc', ''):
                 return False
         return True
