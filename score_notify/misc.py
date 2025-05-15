@@ -46,11 +46,11 @@ class JwMisc:
             raise RuntimeError('Invalid session')
 
         return [{
-            'id': i['bh_id'],
+            'id': i.get('bh_id'),
             'name': i.get('bj', i.get('bh', i['bh_id'])),
-            'grade_id': i['njdm_id'],
-            'major_id': i['zyh_id'],
-            'major_name': i.get('zymc', i.get('zyh', i['zyh_id']))
+            'grade_id': i.get('njdm_id'),
+            'major_id': i.get('zyh_id'),
+            'major_name': i.get('zymc', i.get('zyh', i.get('zyh_id')))
         } for i in response.json()]
 
     def get_schedule(self, term: Tuple[int, int], grade_id: str, major_id: str, class_id: str) -> Optional[dict]:
